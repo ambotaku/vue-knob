@@ -22,14 +22,22 @@
 */
 
 <template>
-  <div>
-    <canvas id="canvas" :width="width" :height="height"></canvas>
+  <div id="knob" :width="width" :height="height">
+    <canvas ref="cv" :width="width" :height="height"
+      @mousedown.prevent="mouseDownListener" @mousemove.prevent="mouseMoveListener"
+      @mouseup.prevent="mouseUpListener" @mouseleave.prevent="mouseCancelListener"
+      @wheel.prevent="scrollListener" @dblclick.prevent="doubleClickListener">
+    </canvas>
+    <div id="inputDiv" v-show="editable_">
+      <input type="number" ref="input" id="input" :style="{fontSize: fontSizeString_+'px', color: color_}"
+             @keypress="keyPressListener">
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: "vue-gauge",
+  name: "vue-knob",
   props: {
     'height': {
       type: Number,
@@ -112,12 +120,20 @@ export default {
     return {
       height_: this['height'],
       width_: this['width'],
-      value_: this['value']
+      value_: this['value'],
+      editable_: false,
+      fontSizeString_: null,
+      color_: this.colorFg
     }
   },
   mounted() {
-    this._canvas = document.getElementById('canvas');
+    this._canvas = this.$refs.cv;
+    this._input = this.$refs.input;
     this._ctx = this._canvas.getContext("2d");
+    const smaller = this.width_ < this.height_ ? this.width_ : this.height_;
+    this._fontSize = 0.2 * smaller;
+    this._mousebutton = false;
+    this._previousValue = 0;
     this.render();
   },
   methods: {
@@ -146,9 +162,9 @@ export default {
       const labelY = centerY + radius;
       const lineWidth = Math.round(trackWidth * radius);
       const labelSize = Math.round(0.8 * lineWidth);
-      const labelSizeString = labelSize.toString();
-      const fontSize = (0.2 * smaller) * textScale;
-      const fontSizeString = fontSize.toString();
+      const labelSizeString = labelSize.toString()
+      const fontSize = this._fontSize * textScale;
+      this.fontSizeString_ = fontSize.toString();
       const ctx = this._ctx;
 
       /*
@@ -188,7 +204,7 @@ export default {
       /*
        * Draw the number.
        */
-      ctx.font = fontSizeString + 'px sans-serif';
+      ctx.font = this.fontSizeString_ + 'px sans-serif';
       ctx.fillStyle = colorFilling;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -204,17 +220,31 @@ export default {
         ctx.textBaseline = 'middle';
         ctx.fillText(label, centerX, labelY);
       }
-
-      /*
-       * Set the color and font size of the input element.
-
-      const elemInput = this._input;
-      elemInput.style.color = colorFilling;
-      elemInput.style.fontSize = fontSizeString + 'px';
-
-       */
     },
-    mouseEventToValue(e, properties) {
+
+    /*
+     * Sets the value of this knob.
+     */
+    setValue(value) {
+      this.setValueFloating(value);
+      this.commit();
+    },
+
+    setValueFloating(value) {
+      const valMin = this.valueMin;
+      const valMax = this.valueMax;
+
+      if (value < valMin) {
+        value = valMin;
+      } else if (value > valMax) {
+        value = valMax;
+      }
+
+      this.value_ = Math.round(value);
+      this.render();
+    },
+
+    mouseEventToValue(e) {
       const canvas = e.target;
       const width = canvas.scrollWidth;
       const height = canvas.scrollHeight;
@@ -224,15 +254,12 @@ export default {
       const y = e.offsetY;
       const relX = x - centerX;
       const relY = y - centerY;
-      const angleStart = properties.angleStart;
-      const angleEnd = properties.angleEnd;
+      const angleStart = this.angleStart;
+      const angleEnd = this.angleEnd;
       const angleDiff = angleEnd - angleStart;
       let angle = Math.atan2(relX, -relY) - angleStart;
       const twoPi = 2.0 * Math.PI;
 
-      /*
-       * Make negative angles positive.
-       */
       if (angle < 0) {
 
         if (angleDiff >= twoPi) {
@@ -240,16 +267,12 @@ export default {
         } else {
           angle = 0;
         }
-
       }
 
       const valMin = this.valueMin
       const valMax = this.valueMax;
       let value = ((angle / angleDiff) * (valMax - valMin)) + valMin;
 
-      /*
-       * Clamp values into valid interval.
-       */
       if (value < valMin) {
         value = valMin;
       } else if (value > valMax) {
@@ -258,65 +281,151 @@ export default {
 
       return value;
     },
-    touchEventToValue(e, properties) {
-      const canvas = e.target;
-      const rect = canvas.getBoundingClientRect();
-      const offsetX = rect.left;
-      const offsetY = rect.top;
-      const width = canvas.scrollWidth;
-      const height = canvas.scrollHeight;
-      const centerX = 0.5 * width;
-      const centerY = 0.5 * height;
-      const touches = e.targetTouches;
-      let touch = null;
 
-      if (touches.length > 0) {
-        touch = touches.item(0);
+    doubleClickListener() {
+      const readonly = this.readOnly;
+
+      if (!readonly) {
+        this.editable_ = true;
+        this._input.focus();
+      }
+    },
+
+    mouseDownListener(e) {
+      const btn = e.buttons;
+
+      if (btn === 1) {
+        const readonly = this.readOnly;
+
+        if (!readonly) {
+          const val = this.mouseEventToValue(e);
+          this.setValueFloating(val);
+        }
+
+        this._mousebutton = true;
       }
 
-      let x = 0.0;
-      let y = 0.0;
+      if (btn === 4) {
+        const readonly = this.readOnly;
 
-      if (touch !== null) {
-        const touchX = touch.pageX;
-        x = touchX - offsetX;
-        const touchY = touch.pageY;
-        y = touchY - offsetY;
+        if (!readonly) {
+          this.editable_ = true;
+          window.setTimeout(() => console.log(this._input), 500);
+          this._input.focus();
+          this.render();
+        }
       }
+    },
 
-      const relX = x - centerX;
-      const relY = y - centerY;
-      const angleStart = properties.angleStart;
-      const angleEnd = properties.angleEnd;
-      const angleDiff = angleEnd - angleStart;
-      const twoPi = 2.0 * Math.PI;
-      let angle = Math.atan2(relX, -relY) - angleStart;
+    mouseMoveListener(e) {
+      const btn = this._mousebutton;
 
-      if (angle < 0) {
+      if (btn) {
+        const readonly = this.readOnly;
 
-        if (angleDiff >= twoPi) {
-          angle += twoPi;
-        } else {
-          angle = 0;
+        if (!readonly) {
+          const val = this.mouseEventToValue(e);
+          this.setValueFloating(val);
+        }
+      }
+    },
+
+    mouseUpListener(e) {
+      const btn = this._mousebutton;
+
+      if (btn) {
+        const readonly = this.readOnly;
+
+        if (!readonly) {
+          const val = this.mouseEventToValue(e);
+          this.setValue(val);
         }
       }
 
-      const valMin = this.valueMin;
-      const valMax = this.valueMax;
-      let value = ((angle / angleDiff) * (valMax - valMin)) + valMin;
+      this._mousebutton = false;
+    },
 
-      if (value < valMin) {
-        value = valMin;
-      } else if (value > valMax) {
-        value = valMax;
+    mouseCancelListener() {
+      const btn = this._mousebutton;
+
+      if (btn) {
+        this.abort();
+        this._mousebutton = false;
       }
+    },
 
-      return value;
+    scrollListener(e) {
+      const readonly = this.readOnly;
+
+      if (!readonly) {
+        const delta = e.deltaY;
+        const direction = delta > 0 ? 1 : (delta < 0 ? -1 : 0);
+        let val = this.value_;
+        val += direction;
+        this.setValueFloating(val);
+
+        let timeout =this._timeout;
+        window.clearTimeout(timeout);
+        timeout = window.setTimeout(() => this.commit(), 250);
+        this._timeout = timeout;
+      }
+    },
+
+    keyPressListener(e) {
+      const key = e.key;
+      if ((key === 'Enter') || (key === 'Escape')) {
+        this.editable_ = false;
+        const input = e.target;
+
+        if (key === 'Enter') {
+          const value = input.value;
+          const val = this.stringToValue(value);
+          const valid = isFinite(val);
+
+          if (valid) {
+            this.setValue(val);
+          }
+        }
+
+        input.value = '';
+      }
+    },
+
+    abort() {
+      this.value_ = this._previousValue;
+      this.render();
+    },
+
+    commit() {
+      this._previousValue = this.value_;
+      this.render();
     }
   }
 }
 </script>
 
 <style scoped>
+#knob {
+  display: inline-block;
+  position: relative;
+  text-align: center;
+}
+
+#inputDiv {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+}
+
+input {
+  border-width: thin;
+  color: #ff8800;
+  font-family: "sans-serif";
+  margin: auto;
+  text-align: center;
+  padding: 0;
+}
 
 </style>
