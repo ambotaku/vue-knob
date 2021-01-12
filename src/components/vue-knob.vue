@@ -399,6 +399,7 @@ export default {
     commit() {
       this._previousValue = this.value_;
       this.render();
+      this.$emit('value-changed', this.value_);
     }
   }
 }

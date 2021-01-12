@@ -1,8 +1,16 @@
 <template>
   <div id="app">
-    <vue-knob :width=200 :height=200 colorBg="#888888" :value-min="0" :value-max="100"
-               color-fg="#E0A000" color-label="#00ff00" label="teste feste"  :text-scale="1.0"
-               :value="50"/>
+    <h1>Color Mixer</h1>
+    <vue-knob :width=200 :height=200 colorBg="#444444" :value-min="0" :value-max="255"
+               color-fg="#ff0000" label="red" :value="127" v-on:value-changed="colorChanged('r', $event)"/>
+    <vue-knob :width=200 :height=200 colorBg="#444444" :value-min="0" :value-max="255"
+              color-fg="#00ff00" label="green" :value="127" v-on:value-changed="colorChanged('g', $event)"/>
+    <vue-knob :width=200 :height=200 colorBg="#444444" :value-min="0" :value-max="255"
+              color-fg="#0000ff" label="blue" :value="127" v-on:value-changed="colorChanged('b', $event)"/>
+    <!--hr-->
+    <div id="resultPane" :style="{backgroundColor: getBackgroundColor}">
+      <p id="colorCode">CSS color code: {{getBackgroundColor}}</p>
+    </div>
   </div>
 </template>
 
@@ -13,6 +21,28 @@ export default {
   name: 'App',
   components: {
     VueKnob
+  },
+  data: function() {
+    return {
+      r: 127,
+      g: 127,
+      b: 127
+    }
+  },
+  computed: {
+    getBackgroundColor() {
+      return '#'+ this.to2hex(this.r) + this.to2hex(this.g) + this.to2hex(this.b);
+    }
+  },
+  methods: {
+    colorChanged(color, e)  {
+      this[color] = e;
+    },
+    to2hex(n) {
+      let s = n.toString(16);
+      if (s.length < 2) s= '0'+s;
+      return s;
+    }
   }
 }
 </script>
@@ -25,5 +55,26 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+  background-color: black;
+}
+
+#resultPane {
+  left: 0;
+  right: 400px;
+  top: 0;
+  height: 200px;
+  padding: 10px;
+  border: 1px solid black;
+}
+
+h1 {
+  padding: 20px;
+  color: white;
+}
+
+#colorCode {
+  padding: 10px;
+  font-size: 30px;
+  color: white;
 }
 </style>
