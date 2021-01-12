@@ -26,7 +26,9 @@
     <canvas ref="cv" :width="width" :height="height"
       @mousedown.prevent="mouseDownListener" @mousemove.prevent="mouseMoveListener"
       @mouseup.prevent="mouseUpListener" @mouseleave.prevent="mouseCancelListener"
-      @wheel.prevent="scrollListener" @dblclick.prevent="doubleClickListener">
+      @wheel.prevent="scrollListener" @dblclick.prevent="doubleClickListener"
+      @touchStartListener="touchStartListener" @touchMoveListener="touchMoveListener"
+      @touchEndListener="touchEndListener"  @touchCancelListener="touchCancelListener">
     </canvas>
     <div id="inputDiv" v-show="editable_">
       <input type="number" ref="input" id="input" :style="{fontSize: fontSizeString_+'px', color: color_}"
@@ -134,6 +136,8 @@ export default {
     this._fontSize = 0.2 * smaller;
     this._mousebutton = false;
     this._previousValue = 0;
+    this._touchCount = 0;
+    this._timeoutDoubleTap = 0;
     this.render();
   },
   methods: {
@@ -405,6 +409,217 @@ export default {
       this._previousValue = this.value_;
       this.render();
       this.$emit('value-changed', this.value_);
+    },
+
+    touchEventToValue(e) {
+      const canvas = e.target;
+      const rect = canvas.getBoundingClientRect();
+      const offsetX = rect.left;
+      const offsetY = rect.top;
+      const width = canvas.scrollWidth;
+      const height = canvas.scrollHeight;
+      const centerX = 0.5 * width;
+      const centerY = 0.5 * height;
+      const touches = e.targetTouches;
+      let touch = null;
+
+      /*
+       * If there are touches, extract the first one.
+       */
+      if (touches.length > 0) {
+        touch = touches.item(0);
+      }
+
+      let x = 0.0;
+      let y = 0.0;
+
+      /*
+       * If a touch was extracted, calculate coordinates relative to
+       * the element position.
+       */
+      if (touch !== null) {
+        const touchX = touch['pageX'];
+        x = touchX - offsetX;
+        const touchY = touch['pageY'];
+        y = touchY - offsetY;
+      }
+
+      const relX = x - centerX;
+      const relY = y - centerY;
+      const angleStart = this.angleStart;
+      const angleEnd = this.angleEnd;
+      const angleDiff = angleEnd - angleStart;
+      const twoPi = 2.0 * Math.PI;
+      let angle = Math.atan2(relX, -relY) - angleStart;
+
+      /*
+       * Make negative angles positive.
+       */
+      if (angle < 0) {
+
+        if (angleDiff >= twoPi) {
+          angle += twoPi;
+        } else {
+          angle = 0;
+        }
+
+      }
+
+      const valMin = this.valueMin;
+      const valMax = this.valueMax;
+      let value = ((angle / angleDiff) * (valMax - valMin)) + valMin;
+
+      /*
+       * Clamp values into valid interval.
+       */
+      if (value < valMin) {
+        value = valMin;
+      } else if (value > valMax) {
+        value = valMax;
+      }
+
+      return value;
+    },
+
+    touchStartListener(e) {
+      const readonly = this.readOnly;
+
+      /*
+       * If knob is not read-only, process touch event.
+       */
+      if (!readonly) {
+        const touches = e.targetTouches;
+        const numTouches = touches.length;
+        const singleTouch = (numTouches === 1);
+        /*
+         * Only process single touches, not multi-touch
+         * gestures.
+         */
+        if (singleTouch) {
+          this._mousebutton = true;
+          /*
+           * If this is the first touch, bind double tap
+           * interval.
+           */
+          if (this._touchCount === 0) {
+            let timeout = this._timeoutDoubleTap;
+            window.clearTimeout(timeout);
+            timeout = window.setTimeout(() => {
+              /*
+               * If control was tapped exactly
+               * twice, enable on-screen keyboard.
+               */
+              if (this._touchCount === 2) {
+                const readonly = this.readOnly;
+
+                /*
+                 * If knob is not read-only,
+                 * display input element.
+                 */
+                if (!readonly) {
+                  e.preventDefault();
+                  this.editable_ = true;
+                  this.render();
+                  this.focusInput();
+                }
+              }
+
+              this._touchCount = 0;
+            }, 500);
+            this._timeoutDoubleTap = timeout;
+          }
+
+          this._touchCount++;
+          const val = this.touchEventToValue(e);
+          this.setValueFloating(val);
+        }
+
+      }
+
+    },
+
+    touchMoveListener(e) {
+      const btn = this._mousebutton;
+
+      /*
+       * Only process event, if mouse button is depressed.
+       */
+      if (btn) {
+        const readonly = this.readOnly;
+
+        /*
+         * If knob is not read-only, process touch event.
+         */
+        if (!readonly) {
+          const touches = e.targetTouches;
+          const numTouches = touches.length;
+          const singleTouch = (numTouches === 1);
+
+          /*
+           * Only process single touches, not multi-touch
+           * gestures.
+           */
+          if (singleTouch) {
+            e.preventDefault();
+            const val = this.touchEventToValue(e);
+            this.setValueFloating(val);
+          }
+        }
+      }
+    },
+
+    /*
+     * This is called when a user lifts a finger off the element.
+     */
+    touchEndListener(e) {
+      const btn = this._mousebutton;
+
+      /*
+       * Only process event, if mouse button was depressed.
+       */
+      if (btn) {
+        const readonly = this.readOnly;
+
+        /*
+         * If knob is not read only, process touch event.
+         */
+        if (!readonly) {
+          const touches = e.targetTouches;
+          const numTouches = touches.length;
+          const noMoreTouches = (numTouches === 0);
+
+          /*
+           * Only commit value after the last finger has
+           * been lifted off.
+           */
+          if (noMoreTouches) {
+            e.preventDefault();
+            this._mousebutton = false;
+            this.commit();
+          }
+        }
+      }
+
+      this._mousebutton = false;
+    },
+
+    /*
+     * This is called when a user cancels a touch action.
+     */
+    touchCancelListener() {
+      const btn = this._mousebutton;
+
+      /*
+       * Abort action if mouse button was depressed.
+       */
+      if (btn) {
+        this.abort();
+        this._touchCount = 0;
+        const timeout = this._timeoutDoubleTap;
+        window.clearTimeout(timeout);
+      }
+
+      this._mousebutton = false;
     }
   }
 }
