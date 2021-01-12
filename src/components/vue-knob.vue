@@ -41,11 +41,11 @@
 export default {
   name: "vue-knob",
   props: {
-    'height': {
+    height: {
       type: Number,
       default: 300
     },
-    'width': {
+    width: {
       type: Number,
       default: 300
     },
@@ -118,24 +118,28 @@ export default {
       default: 0
     }
   },
+
   data: function () {
     return {
-      height_: this['height'],
-      width_: this['width'],
-      value_: this['value'],
+      height_: this.height,
+      width_: this.width,
+      value_: this.value,
       editable_: false,
       fontSizeString_: null,
       color_: this.colorFg
     }
   },
+
   mounted() {
     this._canvas = this.$refs.cv;
     this._input = this.$refs.input;
     this._ctx = this._canvas.getContext("2d");
+
     const smaller = this.width_ < this.height_ ? this.width_ : this.height_;
     this._fontSize = 0.2 * smaller;
-    this._mousebutton = false;
+
     this._previousValue = 0;
+    this._mousebutton = false;
     this._touchCount = 0;
     this._timeoutDoubleTap = 0;
     this.render();
@@ -171,14 +175,12 @@ export default {
       this.fontSizeString_ = fontSize.toString();
       const ctx = this._ctx;
 
-      /*
-       * Clear the canvas.
-       */
+
+      // clear the canvas
       ctx.clearRect(0, 0, width, height);
 
-      /*
-       * Draw the track.
-       */
+
+      // draw the track
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, actualStart, actualEnd);
       ctx.lineCap = 'butt';
@@ -186,16 +188,12 @@ export default {
       ctx.strokeStyle = colorTrack;
       ctx.stroke();
 
-      /*
-       * Draw the filling.
-       */
+      // draw the filling
       ctx.beginPath();
 
-      /*
-       * Check if we're in needle mode.
-       */
+      // check if we're in needle mode
       if (this.needle) {
-        ctx.arc(centerX, centerY, radius, angleVal - 0.01, angleVal + 0.01);
+        ctx.arc(centerX, centerY, radius, angleVal - 0.02, angleVal + 0.02);
       } else {
         ctx.arc(centerX, centerY, radius, actualStart, angleVal);
       }
@@ -205,18 +203,14 @@ export default {
       ctx.strokeStyle = colorFilling;
       ctx.stroke();
 
-      /*
-       * Draw the number.
-       */
+      // draw the number
       ctx.font = this.fontSizeString_ + 'px sans-serif';
       ctx.fillStyle = colorFilling;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(valueStr, centerX, centerY);
 
-      /*
-       * Draw the label
-       */
+      // draw the label
       if (label !== null) {
         ctx.font = labelSizeString + 'px sans-serif';
         ctx.fillStyle = colorLabel;
@@ -226,14 +220,13 @@ export default {
       }
     },
 
-    /*
-     * Sets the value of this knob.
-     */
+    // Sets the committed value of this knob.
     setValue(value) {
       this.setValueFloating(value);
       this.commit();
     },
 
+    // set temporary value during knob operation
     setValueFloating(value) {
       const valMin = this.valueMin;
       const valMax = this.valueMax;
@@ -248,10 +241,12 @@ export default {
       this.render();
     },
 
+    // delay needed for input focussing
     focusInput() {
       window.setTimeout(() => this._input.focus(), 1);
     },
 
+    // mouse position to value
     mouseEventToValue(e) {
       const canvas = e.target;
       const width = canvas.scrollWidth;
@@ -262,10 +257,8 @@ export default {
       const y = e.offsetY;
       const relX = x - centerX;
       const relY = y - centerY;
-      const angleStart = this.angleStart;
-      const angleEnd = this.angleEnd;
-      const angleDiff = angleEnd - angleStart;
-      let angle = Math.atan2(relX, -relY) - angleStart;
+      const angleDiff = this.angleEnd - this.angleStart;
+      let angle = Math.atan2(relX, -relY) - this.angleStart;
       const twoPi = 2.0 * Math.PI;
 
       if (angle < 0) {
@@ -290,6 +283,7 @@ export default {
       return value;
     },
 
+    // handle mouse double click
     doubleClickListener() {
       const readonly = this.readOnly;
 
@@ -300,24 +294,20 @@ export default {
       }
     },
 
+    // start mouse tracking
     mouseDownListener(e) {
       const btn = e.buttons;
 
-      if (btn === 1) {
-        const readonly = this.readOnly;
-
-        if (!readonly) {
+      if (btn === 1) { // left button
+        if (!this.readOnly) { // gauge mode
           const val = this.mouseEventToValue(e);
           this.setValueFloating(val);
         }
-
         this._mousebutton = true;
       }
 
-      if (btn === 4) {
-        const readonly = this.readOnly;
-
-        if (!readonly) {
+      if (btn === 4) {  // middle button
+        if (!this.readOnly) {
           this.editable_ = true;
           this._input.value = '';
           this.render();
@@ -326,60 +316,50 @@ export default {
       }
     },
 
+    // mouse tracking
     mouseMoveListener(e) {
-      const btn = this._mousebutton;
-
-      if (btn) {
-        const readonly = this.readOnly;
-
-        if (!readonly) {
+      if (this._mousebutton) {
+        if (!this.readOnly) {
           const val = this.mouseEventToValue(e);
           this.setValueFloating(val);
         }
       }
     },
 
+    // end mouse tracking
     mouseUpListener(e) {
-      const btn = this._mousebutton;
-
-      if (btn) {
-        const readonly = this.readOnly;
-
-        if (!readonly) {
+      if (this._mousebutton) {
+        if (!this.readOnly) {
           const val = this.mouseEventToValue(e);
           this.setValue(val);
         }
       }
-
       this._mousebutton = false;
     },
 
+    // cancel mouse tracking
     mouseCancelListener() {
-      const btn = this._mousebutton;
-
-      if (btn) {
+      if (this._mousebutton) {
         this.abort();
         this._mousebutton = false;
       }
     },
 
+    // handle mouse wheel
     scrollListener(e) {
-      const readonly = this.readOnly;
-
-      if (!readonly) {
+      if (!this.readOnly) {
         const delta = e.deltaY;
         const direction = delta > 0 ? 1 : (delta < 0 ? -1 : 0);
         let val = this.value_;
         val += direction;
         this.setValueFloating(val);
 
-        let timeout =this._timeout;
-        window.clearTimeout(timeout);
-        timeout = window.setTimeout(() => this.commit(), 250);
-        this._timeout = timeout;
+        window.clearTimeout(this._timeout);
+        this._timeout = window.setTimeout(() => this.commit(), 250);
       }
     },
 
+    // keyboard handler
     keyUpListener(e) {
       const key = e.key;
       if ((key === 'Enter') || (key === 'Escape')) {
@@ -387,8 +367,7 @@ export default {
         const input = e.target;
 
         if (key === 'Enter') {
-          const value = input.value;
-          const val = this.stringToValue(value);
+          const val = this.stringToValue(input.value);
           const valid = isFinite(val);
 
           if (valid) {
@@ -400,17 +379,20 @@ export default {
       }
     },
 
+    // rollback changed value
     abort() {
       this.value_ = this._previousValue;
       this.render();
     },
 
+    // commit value change
     commit() {
       this._previousValue = this.value_;
       this.render();
       this.$emit('value-changed', this.value_);
     },
 
+    // touch position to value
     touchEventToValue(e) {
       const canvas = e.target;
       const rect = canvas.getBoundingClientRect();
@@ -423,9 +405,7 @@ export default {
       const touches = e.targetTouches;
       let touch = null;
 
-      /*
-       * If there are touches, extract the first one.
-       */
+      // if there are touches, extract the first one.
       if (touches.length > 0) {
         touch = touches.item(0);
       }
@@ -433,10 +413,8 @@ export default {
       let x = 0.0;
       let y = 0.0;
 
-      /*
-       * If a touch was extracted, calculate coordinates relative to
-       * the element position.
-       */
+      // If a touch was extracted, calculate coordinates relative to
+      // the element position.
       if (touch !== null) {
         const touchX = touch['pageX'];
         x = touchX - offsetX;
@@ -446,32 +424,24 @@ export default {
 
       const relX = x - centerX;
       const relY = y - centerY;
-      const angleStart = this.angleStart;
-      const angleEnd = this.angleEnd;
-      const angleDiff = angleEnd - angleStart;
+      const angleDiff = this.angleEnd - this.angleStart;
       const twoPi = 2.0 * Math.PI;
-      let angle = Math.atan2(relX, -relY) - angleStart;
+      let angle = Math.atan2(relX, -relY) - this.angleStart;
 
-      /*
-       * Make negative angles positive.
-       */
+      // make negative angles positive.
       if (angle < 0) {
-
         if (angleDiff >= twoPi) {
           angle += twoPi;
         } else {
           angle = 0;
         }
-
       }
 
       const valMin = this.valueMin;
       const valMax = this.valueMax;
       let value = ((angle / angleDiff) * (valMax - valMin)) + valMin;
 
-      /*
-       * Clamp values into valid interval.
-       */
+      // clamp values into valid interval.
       if (value < valMin) {
         value = valMin;
       } else if (value > valMax) {
@@ -481,26 +451,19 @@ export default {
       return value;
     },
 
+    // handle touch start
     touchStartListener(e) {
-      const readonly = this.readOnly;
-
-      /*
-       * If knob is not read-only, process touch event.
-       */
-      if (!readonly) {
+      // if knob is not read-only, process touch event.
+      if (!this.readOnly) {
         const touches = e.targetTouches;
         const numTouches = touches.length;
         const singleTouch = (numTouches === 1);
-        /*
-         * Only process single touches, not multi-touch
-         * gestures.
-         */
+
+        // only process single touches, not multi-touch gestures
         if (singleTouch) {
           this._mousebutton = true;
-          /*
-           * If this is the first touch, bind double tap
-           * interval.
-           */
+
+          // if this is the first touch, bind double tap interval interval.
           if (this._touchCount === 0) {
             let timeout = this._timeoutDoubleTap;
             window.clearTimeout(timeout);
@@ -510,13 +473,7 @@ export default {
                * twice, enable on-screen keyboard.
                */
               if (this._touchCount === 2) {
-                const readonly = this.readOnly;
-
-                /*
-                 * If knob is not read-only,
-                 * display input element.
-                 */
-                if (!readonly) {
+                if (!this.readOnly) {
                   e.preventDefault();
                   this.editable_ = true;
                   this.render();
@@ -533,32 +490,17 @@ export default {
           const val = this.touchEventToValue(e);
           this.setValueFloating(val);
         }
-
       }
-
     },
 
     touchMoveListener(e) {
-      const btn = this._mousebutton;
-
-      /*
-       * Only process event, if mouse button is depressed.
-       */
-      if (btn) {
-        const readonly = this.readOnly;
-
-        /*
-         * If knob is not read-only, process touch event.
-         */
-        if (!readonly) {
+      if (this._mousebutton) {
+        if (!this.readOnly) {
           const touches = e.targetTouches;
           const numTouches = touches.length;
           const singleTouch = (numTouches === 1);
 
-          /*
-           * Only process single touches, not multi-touch
-           * gestures.
-           */
+          // only process single touches, not multi-touch
           if (singleTouch) {
             e.preventDefault();
             const val = this.touchEventToValue(e);
@@ -568,30 +510,14 @@ export default {
       }
     },
 
-    /*
-     * This is called when a user lifts a finger off the element.
-     */
+    // this is called when a user lifts a finger off the element.
     touchEndListener(e) {
-      const btn = this._mousebutton;
-
-      /*
-       * Only process event, if mouse button was depressed.
-       */
-      if (btn) {
-        const readonly = this.readOnly;
-
-        /*
-         * If knob is not read only, process touch event.
-         */
-        if (!readonly) {
+      if (this._mousebutton) {
+        if (!this.readOnly) {
           const touches = e.targetTouches;
           const numTouches = touches.length;
           const noMoreTouches = (numTouches === 0);
 
-          /*
-           * Only commit value after the last finger has
-           * been lifted off.
-           */
           if (noMoreTouches) {
             e.preventDefault();
             this._mousebutton = false;
@@ -603,16 +529,9 @@ export default {
       this._mousebutton = false;
     },
 
-    /*
-     * This is called when a user cancels a touch action.
-     */
+    // cancel touch processing
     touchCancelListener() {
-      const btn = this._mousebutton;
-
-      /*
-       * Abort action if mouse button was depressed.
-       */
-      if (btn) {
+      if (this._mousebutton) {
         this.abort();
         this._touchCount = 0;
         const timeout = this._timeoutDoubleTap;
@@ -649,5 +568,4 @@ input {
   text-align: center;
   padding: 0;
 }
-
 </style>
