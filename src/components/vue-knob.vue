@@ -30,7 +30,7 @@
     </canvas>
     <div id="inputDiv" v-show="editable_">
       <input type="number" ref="input" id="input" :style="{fontSize: fontSizeString_+'px', color: color_}"
-             @keypress="keyPressListener">
+             @keyup="keyUpListener">
     </div>
   </div>
 </template>
@@ -244,6 +244,10 @@ export default {
       this.render();
     },
 
+    focusInput() {
+      window.setTimeout(() => this._input.focus(), 1);
+    },
+
     mouseEventToValue(e) {
       const canvas = e.target;
       const width = canvas.scrollWidth;
@@ -287,7 +291,8 @@ export default {
 
       if (!readonly) {
         this.editable_ = true;
-        this._input.focus();
+        this.render();
+        this.focusInput();
       }
     },
 
@@ -310,9 +315,9 @@ export default {
 
         if (!readonly) {
           this.editable_ = true;
-          window.setTimeout(() => console.log(this._input), 500);
-          this._input.focus();
+          this._input.value = '';
           this.render();
+          this.focusInput();
         }
       }
     },
@@ -371,7 +376,7 @@ export default {
       }
     },
 
-    keyPressListener(e) {
+    keyUpListener(e) {
       const key = e.key;
       if ((key === 'Enter') || (key === 'Escape')) {
         this.editable_ = false;
@@ -421,7 +426,8 @@ export default {
 }
 
 input {
-  border-width: thin;
+  width: 150px;
+  z-index: 2;
   color: #ff8800;
   font-family: "sans-serif";
   margin: auto;

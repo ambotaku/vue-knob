@@ -2,11 +2,11 @@
   <div id="app">
     <h1>Color Mixer</h1>
     <vue-knob :width=200 :height=200 colorBg="#444444" :value-min="0" :value-max="255"
-               color-fg="#ff0000" label="red" :value="127" v-on:value-changed="colorChanged('r', $event)"/>
+               color-fg="#ff0000" label="red" :value="127" @value-changed="colorChanged('r', $event)"/>
     <vue-knob :width=200 :height=200 colorBg="#444444" :value-min="0" :value-max="255"
-              color-fg="#00ff00" label="green" :value="127" v-on:value-changed="colorChanged('g', $event)"/>
+              color-fg="#00ff00" label="green" :value="127" @value-changed="colorChanged('g', $event)"/>
     <vue-knob :width=200 :height=200 colorBg="#444444" :value-min="0" :value-max="255"
-              color-fg="#0000ff" label="blue" :value="127" v-on:value-changed="colorChanged('b', $event)"/>
+              color-fg="#0000ff" label="blue" :value="127" @value-changed="colorChanged('b', $event)"/>
     <!--hr-->
     <div id="resultPane" :style="{backgroundColor: getBackgroundColor}">
       <p id="colorCode">CSS color code: {{getBackgroundColor}}</p>
