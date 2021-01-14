@@ -114,8 +114,8 @@ export default {
       default: 100
     },
     value: {
-      type: Number,
-      default: 0
+      type: String,
+      default: "0"
     }
   },
 
