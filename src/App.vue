@@ -38,7 +38,7 @@ export default {
   data: function() {
     return {
       knobSize: 250,
-      direction: 'N',
+      direction: 4,
       r: 127,
       g: 127,
       b: 127
