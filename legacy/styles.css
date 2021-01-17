@@ -1,0 +1,31 @@
+
+#mixer {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
+    background-color: black;
+}
+
+#resultPane {
+    left: 0;
+    right: 400px;
+    top: 0;
+    height: 200px;
+    padding: 10px;
+    border: 1px solid black;
+}
+
+h1 {
+    padding: 20px;
+    color: white;
+}
+
+.text {
+    padding: 10px;
+    font-size: 30px;
+    color: white;
+}
+

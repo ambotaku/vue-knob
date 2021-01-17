@@ -4,9 +4,12 @@ Looking for a minimalistic styled, lean, but versatile gauge and knob control, I
 
 As a fan of the lean and mean [Vue web framework](https://vuejs.org/) and a more declarative programming model I preferred using that widget as Vue component and used Andre's code creating a Vue component. The original package also contains linear bar graphs that I didn't port. As the original *vue-canvas-knob* supports mouse, wheel, touch and  keyboard control. Besides Vue, HTML5 and ES6 JS no dependencies are needed.
 
-## Example
+## Example (Vue Cli project)
 
 The package's root folder contains a small *color mixer* webapp containing three *vue-canvas-knob* widgets that are used to mix the color of a box beneath. Right of it is a multiswitch knob with eight compass directions in *needle*-style.
+
+> Here *vue-canvas-knob* is used as Vue single file component (SFC), which cannot be used in browsers directly. The continous integration tool [Vue Cli](https://cli.vuejs.org/) precompiles anything (HTML, JS, CSS) into massively packed JS-files for optimal performance, low footprint, encapsulation and browser version independence. Using this is the recommended approach.
+If you need to use *vue-canvas-knob* in some legacy project that doesn't allow precompiled code, you can may the component form file "legacy/vue-knob.js" with a HTML conventional *\<script\>* tag (See next example).
 
 ![file](color-mixer.png)
 
@@ -128,6 +131,10 @@ h1 {
 
 The file *App.vue* contains the application*s code, all other files were scaffolded by the [Vue Cli](https://cli.vuejs.org/), and remain unchanged. The component lays in the *components* folder.
 
+## Example (Vue Legacy JS project)
+If you want to use *vue-canvas* knob in some legacy JS project where you can't use [Webpack](https://webpack.js.org/) and its compiler plugins, you can use the file *vue-knob.js* stored in the *legacy* folder instead. There is also an *index.html* file containing the *Color-Mixer* example with the same functionality as the preferred code above in that folder. Of course it will have drawbacks related to performance, size and possible side effects wit existing code, which were solved by implementation of single file component integrating projects.
+
+
 ## Knob Operation
 
 - Normal left click / drag / touch changes value, releasing button commits value.
@@ -148,7 +155,7 @@ import VueKnob from "@/components/vue-knob";
 ... like in my example above. That import will allow using the <vue-knob> tag in your templates:
 ```html
     <vue-knob :width=knobSize :height=knobSize colorBg="#444444" :value-min="0" :value-max="255"
-               color-fg="#ff0000" label="red" :value="127" @value-changed="colorChanged('r', $event)"/>
+              color-fg="#ff0000" label="red" :value="127" @value-changed="colorChanged('r', $event)"/>
 ```
 As attributes all properties explained below can be passed and support Vue's data binding, e.g. the variable *knobSize* that is bound to the height and width attributes (The colon before the attribute is needed for passing numbers in Vue). Currently *vue-canvas-knob* only supports a *value-changed* event that is passing a value when the knob gets turned (All event names are prefixed with @ for Vue, $event contains that value, extra parameters can be used e.g. to identify an instance).
 
@@ -193,6 +200,4 @@ All properties have defaults (shown in red after the explanation above).
 
 ## Events
 -  colorChanged will be called for a committed value change and passes that value to a handler as sole parameter. For passing additional values assign a function that gets the value as parameter $event (like in example above).
-
-
 

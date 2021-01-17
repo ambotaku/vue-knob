@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Color Mixer (legacy)</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="app">
+    </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script><script src="vue-knob.js"></script>
+
+  <script type="text/javascript">
+    // compass directions
+    const directions = ['S','SW','W','NW','N','NE','E','SE'];
+
+    new Vue({
+      data: function() {
+        return {
+          knobSize: 250,
+          direction: 'N',
+          r: 127,
+          g: 127,
+          b: 127
+        }
+      },
+      template: `
+    <div id="mixer">
+      <h1>Color Mixer</h1>
+      <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255"
+        color-fg="#ff0000" label="red" value="127" @value-changed="colorChanged('r', $event)"/>
+      <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255"
+        color-fg="#00ff00" label="green" value="127" @value-changed="colorChanged('g', $event)"/>
+      <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255"
+        color-fg="#0000ff" label="blue" value="127" @value-changed="colorChanged('b', $event)"/>
+
+      <vue-knob :width=knobSize :height="knobSize" color-bg="#444444" :value-min="0" :value-max="8"
+        :angle-start="-Math.PI" :angle-end="Math.PI" color-fg="#eeeeee"
+        value="4" :needle="true" :string-to-value="directionToValue" :value-to-string="valueToDirection"
+        @value-changed="directionChanged($event)">
+
+      </vue-knob>
+      <div id="resultPane" :style="{backgroundColor: getBackgroundColor}">
+      <p class="text">CSS color code: {{getBackgroundColor}}</p>
+      <p class="text">{{valueToDirection(direction)}}</p>
+      </div>
+
+    </div>
+    `,
+      computed: {
+        getBackgroundColor() {
+          return '#'+ this.to2hex(this.r) + this.to2hex(this.g) + this.to2hex(this.b);
+        }
+      },
+
+      methods: {
+        colorChanged(color, e)  {
+          this[color] = e;
+        },
+
+        directionChanged(e) {
+          this.direction = e;
+        },
+
+        to2hex(n) {
+          let s = n.toString(16);
+          if (s.length < 2) s= '0'+s;
+          return s;
+        },
+
+        // convert compass direction to internal number
+        directionToValue(direction) {
+          const idx = directions.findIndex(el => el === direction.toUpperCase());
+          return (idx === -1) ? 0 : idx;
+        },
+
+        // convert internal number to compass direction
+        valueToDirection(value) {
+          return directions[Math.trunc(value % 8)];
+        }
+      }
+    }).$mount('#app');
+  </script>
+  </body>
+</html>
