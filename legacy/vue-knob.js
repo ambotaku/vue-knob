@@ -37,7 +37,7 @@ Vue.component("vue-knob", {
     <div id="inputDiv" v-show="editable_" :style="{left:0,right:0,top:0,bottom:0,position:'absolute'}">
       <input type="number" ref="input" id="input"
              :style="{fontSize: fontSizeString_+'px',color: color_ ,width: '150px', margin: 'auto', textAlign: 'center', padding: 0}"
-             @keyup="keyUpListener">
+             :min="valueMin" :max="valueMax" @blur="editable_=false" @keyup="keyUpListener">
     </div>
   </div>
   `,
@@ -95,6 +95,10 @@ Vue.component("vue-knob", {
       default: false
     },
     readOnly: {
+      type: Boolean,
+      default: false
+    },
+    inputPopup: {
       type: Boolean,
       default: false
     },
@@ -247,23 +251,13 @@ Vue.component("vue-knob", {
       window.setTimeout(() => this._input.focus(), 1);
     },
 
-    // mouse position to value
-    mouseEventToValue(e) {
-      const canvas = e.target;
-      const width = canvas.scrollWidth;
-      const height = canvas.scrollHeight;
-      const centerX = 0.5 * width;
-      const centerY = 0.5 * height;
-      const x = e.offsetX;
-      const y = e.offsetY;
-      const relX = x - centerX;
-      const relY = y - centerY;
+    calculateValue(relX, relY) {
       const angleDiff = this.angleEnd - this.angleStart;
       let angle = Math.atan2(relX, -relY) - this.angleStart;
       const twoPi = 2.0 * Math.PI;
 
+      // make negative angles positive.
       if (angle < 0) {
-
         if (angleDiff >= twoPi) {
           angle += twoPi;
         } else {
@@ -271,10 +265,11 @@ Vue.component("vue-knob", {
         }
       }
 
-      const valMin = this.valueMin
+      const valMin = this.valueMin;
       const valMax = this.valueMax;
       let value = ((angle / angleDiff) * (valMax - valMin)) + valMin;
 
+      // clamp values into valid interval.
       if (value < valMin) {
         value = valMin;
       } else if (value > valMax) {
@@ -284,11 +279,25 @@ Vue.component("vue-knob", {
       return value;
     },
 
+    // mouse position to value
+    mouseEventToValue(e) {
+      const canvas = e.target;
+      const width = canvas.scrollWidth;
+      const height = canvas.scrollHeight;
+      const x = e.offsetX;
+      const y = e.offsetY;
+      const centerX = 0.5 * width;
+      const centerY = 0.5 * height;
+      const relX = x - centerX;
+      const relY = y - centerY;
+      return this.calculateValue(relX, relY);
+    },
+
     // handle mouse double click
     doubleClickListener() {
       const readonly = this.readOnly;
 
-      if (!readonly) {
+      if (!readonly && this.inputPopup) {
         this.editable_ = true;
         this.render();
         this.focusInput();
@@ -308,7 +317,7 @@ Vue.component("vue-knob", {
       }
 
       if (btn === 4) {  // middle button
-        if (!this.readOnly) {
+        if (!this.readOnly && this.inputPopup) {
           this.editable_ = true;
           this._input.value = '';
           this.render();
@@ -425,31 +434,7 @@ Vue.component("vue-knob", {
 
       const relX = x - centerX;
       const relY = y - centerY;
-      const angleDiff = this.angleEnd - this.angleStart;
-      const twoPi = 2.0 * Math.PI;
-      let angle = Math.atan2(relX, -relY) - this.angleStart;
-
-      // make negative angles positive.
-      if (angle < 0) {
-        if (angleDiff >= twoPi) {
-          angle += twoPi;
-        } else {
-          angle = 0;
-        }
-      }
-
-      const valMin = this.valueMin;
-      const valMax = this.valueMax;
-      let value = ((angle / angleDiff) * (valMax - valMin)) + valMin;
-
-      // clamp values into valid interval.
-      if (value < valMin) {
-        value = valMin;
-      } else if (value > valMax) {
-        value = valMax;
-      }
-
-      return value;
+      return this.calculateValue(relX, relY);
     },
 
     // handle touch start
@@ -474,8 +459,8 @@ Vue.component("vue-knob", {
                * twice, enable on-screen keyboard.
                */
               if (this._touchCount === 2) {
-                if (!this.readOnly) {
-                  e.preventDefault();
+                e.preventDefault();
+                if (!this.readOnly && this.inputPopup) {
                   this.editable_ = true;
                   this.render();
                   this.focusInput();

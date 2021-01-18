@@ -140,7 +140,8 @@ If you want to use *vue-canvas* knob in some legacy JS project where you can't u
 - Normal left click / drag / touch changes value, releasing button commits value.
 - pulling mouse / touch outside the element before release restores back to old value.
 - double click or middle click enables entry of value via keyboard.
-- when keyboard entry is enabled `ESC` to restore old value and disable keyboard entry, `Enter`/`Return` to commit new value and disable keyboard entry.
+- when input field is enabled `ESC` to restore old value and disable keyboard entry, `Enter`/`Return` to commit new value and disable keyboard entry.
+- disable input field by clicking outside of it or pressing ESC key 
 - use mouse wheel to turn knob
 
 ## Installation and usage
@@ -187,6 +188,7 @@ $ yarn lint
 - `colorLabel`: Color of the (optional) label. `#ffffff`
 - `stringToValue`: Function turning a string into a (numeric) value. `(value) => parseInt(value)`
 - `valueToString`: Function turning a (numeric) value into a string.  `(value) => value.toString()`
+- `inputPopup`: enable input popup field; only usable for numeric values (don't user for multiswitchs) `false`
 - `label`: A label (string) displayed at the bottom of the knob, a track radius length away from the center. Set to null to not print any label. `null`
 - `needle`: Boolean indicating whether we should use a tiny marker / needle instead of a filling gauge to indicate value along the knob's track. `false`
 - `readOnly`: Boolean indicating whether the value of the knob is write-protected and thus not editable by the user. Useful for displaying values (gauges) without allowing them to get edited. `false`

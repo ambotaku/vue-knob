@@ -2,11 +2,11 @@
   <div id="app">
     <h1>Color Mixer</h1>
     <!-- knobs to control RGB value -->
-    <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255"
+    <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255" :input-popup="true"
                color-fg="#ff0000" label="red" value="127" @value-changed="colorChanged('r', $event)"/>
-    <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255"
+    <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255" :input-popup="true"
               color-fg="#00ff00" label="green" value="127" @value-changed="colorChanged('g', $event)"/>
-    <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255"
+    <vue-knob :width=knobSize :height=knobSize color-bg="#444444" :value-min="0" :value-max="255" :input-popup="true"
               color-fg="#0000ff" label="blue" value="127" @value-changed="colorChanged('b', $event)"/>
 
     <!-- hat switch with compass directions with needle style -->

@@ -1,6 +1,6 @@
 {
   "name": "vue-canvas-knob",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "author": "<klaus@zerbe.cloud>",
   "license": "Apache-2.0",
   "keywords": ["vue","vue-cli","canvas","knob","dial","gauge","hat switch"],
