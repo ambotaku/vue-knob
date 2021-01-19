@@ -203,3 +203,5 @@ All properties have defaults (shown in red after the explanation above).
 ## Events
 -  colorChanged will be called for a committed value change and passes that value to a handler as sole parameter. For passing additional values assign a function that gets the value as parameter $event (like in example above).
 
+## Node Red
+The included file *nodered-uibuilder-vue.json* is a demo for using *vue-knob* widgets in node-red frontends using the uibuilder node. For more information see [node-red UI Builder](https://flows.nodered.org/node/node-red-contrib-uibuilder)
